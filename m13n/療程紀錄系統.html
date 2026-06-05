@@ -236,9 +236,37 @@ textarea.fi{resize:vertical;min-height:60px;line-height:1.6}
 /* SETTINGS GEAR */
 .settings-btn{background:none;border:none;font-size:18px;cursor:pointer;padding:4px;color:var(--ink-soft);transition:color .2s}
 .settings-btn:hover{color:var(--rose)}
+
+/* FIREBASE LOADING */
+.fb-loading{position:fixed;inset:0;background:linear-gradient(145deg,#faf4f7 0%,#f0e6ec 50%,#fdfaf8 100%);z-index:99999;display:flex;align-items:center;justify-content:center;flex-direction:column;gap:14px}
+.fb-loading-flower{font-size:36px;opacity:.7;animation:fbpulse 1.4s ease-in-out infinite}
+.fb-loading-text{font-family:'Noto Serif TC',serif;font-size:14px;color:#8b4f6e;letter-spacing:.08em}
+@keyframes fbpulse{0%,100%{opacity:.7}50%{opacity:1}}
 </style>
+<script type="module">
+import { initializeApp } from 'https://www.gstatic.com/firebasejs/10.12.0/firebase-app.js';
+import { getAuth, signInWithEmailAndPassword, signOut, onAuthStateChanged, updatePassword } from 'https://www.gstatic.com/firebasejs/10.12.0/firebase-auth.js';
+import { getFirestore, collection, doc, setDoc, deleteDoc, onSnapshot } from 'https://www.gstatic.com/firebasejs/10.12.0/firebase-firestore.js';
+const firebaseConfig={apiKey:"AIzaSyCn7LKTm9Sxw9Apvaxvw5Y0JLSlZ4vaV6g",authDomain:"mn13-c1101.firebaseapp.com",projectId:"mn13-c1101",storageBucket:"mn13-c1101.firebasestorage.app",messagingSenderId:"106826366795",appId:"1:106826366795:web:1013d6fc1fcf065f8432ce"};
+const app=initializeApp(firebaseConfig);
+const auth=getAuth(app);
+const db=getFirestore(app);
+const FB_EMAIL='beauty@mn13.app';
+window._fbAuth=auth;
+window._fbDb=db;
+window._fbSignIn=(pw)=>signInWithEmailAndPassword(auth,FB_EMAIL,pw);
+window._fbSignOut=()=>signOut(auth);
+window._fbOnAuth=(cb)=>onAuthStateChanged(auth,cb);
+window._fbSet=(col,id,data)=>setDoc(doc(db,col,String(id)),data);
+window._fbDel=(col,id)=>deleteDoc(doc(db,col,String(id)));
+window._fbSnapshot=(col,cb)=>onSnapshot(collection(db,col),cb);
+window._fbUpdatePW=(user,pw)=>updatePassword(user,pw);
+window._fbReady=true;
+window.dispatchEvent(new Event('fbready'));
+</script>
 </head>
 <body>
+<div class="fb-loading" id="fb-loading"><div class="fb-loading-flower">&#x1F338;</div><div class="fb-loading-text">&#36899;&#32218;&#20013;&#8230;</div></div>
 <div class="app-shell">
 <header class="app-header">
     <div class="app-header-top">
@@ -622,19 +650,13 @@ var IMG_SRCS={
 };
 
 // ── PASSWORD ─────────────────────────────────────────────────
-var CORRECT_PW='1192';
 function checkPW(){
   var v=document.getElementById('pw-input').value;
   var err=document.getElementById('pw-error');
-  if(v===CORRECT_PW){
-    document.getElementById('pw-screen').style.display='none';
-    sessionStorage.setItem('auth','1');
-    err.textContent='';
-  } else {
-    err.textContent='密碼錯誤，請再試一次';
-    document.getElementById('pw-input').value='';
-    document.getElementById('pw-input').focus();
-  }
+  err.textContent='驗證中…';
+  document.querySelector('.pw-btn').disabled=true;
+  window._fbSignIn(v).then(()=>{err.textContent='';document.querySelector('.pw-btn').disabled=false;})
+  .catch(()=>{err.textContent='密碼錯誤，請再試一次';document.getElementById('pw-input').value='';document.getElementById('pw-input').focus();document.querySelector('.pw-btn').disabled=false;});
 }
 function togPWEye(){
   var i=document.getElementById('pw-input');
@@ -645,25 +667,19 @@ function openSettings(){
   document.getElementById('settings-modal').classList.add('show');document.body.style.overflow='hidden';
 }
 function changePW(){
-  var old=document.getElementById('s-old-pw').value;
   var nw=document.getElementById('s-new-pw').value;
   var cf=document.getElementById('s-confirm-pw').value;
   var err=document.getElementById('s-pw-error');
-  if(old!==CORRECT_PW){err.textContent='目前密碼錯誤';return;}
   if(nw.length<4){err.textContent='新密碼至少需要 4 位';return;}
   if(nw!==cf){err.textContent='兩次密碼不一致';return;}
-  CORRECT_PW=nw;
-  ['s-old-pw','s-new-pw','s-confirm-pw'].forEach(id=>document.getElementById(id).value='');
-  err.textContent='';
-  closeModal('settings-modal');showToast('密碼已更新 ✓');
+  var user=window._fbAuth&&window._fbAuth.currentUser;
+  if(!user){err.textContent='請先登入';return;}
+  window._fbUpdatePW(user,nw).then(()=>{
+    ['s-old-pw','s-new-pw','s-confirm-pw'].forEach(id=>document.getElementById(id).value='');
+    err.textContent='';closeModal('settings-modal');showToast('密碼已更新 ✓');
+  }).catch(e=>{err.textContent='更新失敗：'+e.message;});
 }
-function lockApp(){
-  sessionStorage.removeItem('auth');
-  closeModal('settings-modal');
-  document.getElementById('pw-screen').style.display='flex';
-  document.getElementById('pw-input').value='';
-  document.getElementById('pw-error').textContent='';
-}
+function lockApp(){window._fbSignOut&&window._fbSignOut();closeModal('settings-modal');}
 
 // ── CLIENT EDIT / DELETE ──────────────────────────────────────
 var editClientId=null,deleteClientId=null,editClientTypes={member:false,gomaji:false};
@@ -686,6 +702,7 @@ function confirmEditClient(){
   var c=clients.find(x=>x.id===editClientId);if(!c)return;
   c.name=name;c.birthday=document.getElementById('ec-birthday').value;
   c.isMember=editClientTypes.member;c.isGomaji=editClientTypes.gomaji;
+  window._fbSet&&window._fbSet('clients',c.id,c);
   closeModal('edit-client-modal');renderClients();updateFilter();showToast('客戶資料已更新 ✓');
   if(selClient&&selClient.id===editClientId){selClient=c;renderHeaderBadge();
     if(document.getElementById('client-detail-view').style.display!=='none'){var tab=document.querySelector('.cd-tab.on');renderClientDetail(tab&&tab.textContent.includes('皮膚')?'skin':'body');}
@@ -699,7 +716,9 @@ function askDeleteClient(id){
 }
 function closeClientConfirm(){document.getElementById('confirm-client-dialog').classList.remove('show');}
 function doDeleteClient(){
+  records.filter(r=>r.clientId===deleteClientId).forEach(r=>window._fbDel&&window._fbDel('records',r.id));
   records=records.filter(r=>r.clientId!==deleteClientId);
+  window._fbDel&&window._fbDel('clients',deleteClientId);
   clients=clients.filter(c=>c.id!==deleteClientId);
   if(selClient&&selClient.id===deleteClientId){selClient=null;renderHeaderBadge();
     document.getElementById('client-list-view').style.display='block';
@@ -885,7 +904,9 @@ function confirmAddClient(){
   var name=document.getElementById('nc-name').value.trim();
   if(!name){showToast('請填寫姓名！');return;}
   var bd=document.getElementById('nc-birthday').value;
-  clients.push({id:nCid++,name,birthday:bd,color:nCid%5,isMember:newClientTypes.member,isGomaji:newClientTypes.gomaji});
+  var newC={id:nCid++,name,birthday:bd,color:nCid%5,isMember:newClientTypes.member,isGomaji:newClientTypes.gomaji};
+  clients.push(newC);
+  window._fbSet&&window._fbSet('clients',newC.id,newC);
   newClientTypes={member:false,gomaji:false};
   document.getElementById('nc-name').value='';document.getElementById('nc-birthday').value='';
   document.getElementById('tt-member').classList.remove('on');document.getElementById('tt-gomaji').classList.remove('on');
@@ -1011,6 +1032,7 @@ function saveRecord(){
   if(hasBody){rec.bodyIssues=getChecked('sec-body');rec.bodyDesc=document.getElementById('f-body-desc').value;rec.bodyProducts=document.getElementById('f-body-products').value;}
   if(curCat==='O')rec.otherDesc=document.getElementById('f-other').value;
   records.unshift(rec);records.sort((a,b)=>b.date.localeCompare(a.date));
+  window._fbSet&&window._fbSet('records',rec.id,rec);
   drawData={};
   ['face-before','face-during','body-front','body-back'].forEach(k=>{
     var cv=document.getElementById(CV_MAP[k]);
@@ -1042,6 +1064,7 @@ function commitEdit(){
   r.questions=document.getElementById('edit-questions').value;r.homecare=document.getElementById('edit-homecare').value;
   r.charge=document.getElementById('edit-charge').value;r.notes=document.getElementById('edit-notes').value;
   records.sort((a,b)=>b.date.localeCompare(a.date));
+  window._fbSet&&window._fbSet('records',r.id,r);
   closeModal('edit-modal');showToast('紀錄已更新 ✓');renderHistory();
   if(selClient&&document.getElementById('client-detail-view').style.display!=='none'){
     var tab=document.querySelector('.cd-tab.on');renderClientDetail(tab&&tab.textContent.includes('皮膚')?'skin':'body');}
@@ -1051,6 +1074,7 @@ function commitEdit(){
 function askDelete(id){deleteRecId=id;document.getElementById('confirm-dialog').classList.add('show');}
 function closeConfirm(){document.getElementById('confirm-dialog').classList.remove('show');}
 function doDelete(){
+  window._fbDel&&window._fbDel('records',deleteRecId);
   records=records.filter(r=>r.id!==deleteRecId);closeConfirm();showToast('紀錄已刪除');
   renderClients();renderHistory();updateFilter();
   if(selClient&&document.getElementById('client-detail-view').style.display!=='none'){
@@ -1087,15 +1111,52 @@ document.getElementById('f-date').value=new Date().toISOString().split('T')[0];
 document.getElementById('add-client-btn').addEventListener('click',function(){
   document.getElementById('add-client-modal').classList.add('show');document.body.style.overflow='hidden';
 });
-records.sort((a,b)=>b.date.localeCompare(a.date));
-setCat('F');updateFilter();renderClients();renderHeaderBadge();
-// Check auth
-if(sessionStorage.getItem('auth')==='1'){
-  document.getElementById('pw-screen').style.display='none';
-} else {
-  document.getElementById('pw-screen').style.display='flex';
-  setTimeout(()=>document.getElementById('pw-input').focus(),100);
+
+function startFirestoreListeners(){
+  window._fbSnapshot('clients',snap=>{
+    clients=[];
+    snap.forEach(d=>{var data=d.data();clients.push(data);});
+    clients.sort((a,b)=>Number(a.id)-Number(b.id));
+    nCid=clients.length?Math.max(...clients.map(c=>Number(c.id)))+1:1;
+    renderClients();updateFilter();renderHeaderBadge();
+  });
+  window._fbSnapshot('records',snap=>{
+    records=[];
+    snap.forEach(d=>{var data=d.data();records.push(data);});
+    records.sort((a,b)=>b.date.localeCompare(a.date));
+    nRid=records.length?Math.max(...records.map(r=>Number(r.id)))+1:1;
+    renderHistory();renderClients();
+    if(selClient&&document.getElementById('client-detail-view').style.display!=='none'){
+      var tab=document.querySelector('.cd-tab.on');
+      renderClientDetail(tab&&tab.textContent.includes('皮膚')?'skin':'body');
+    }
+  });
 }
+
+function initApp(){
+  records.sort((a,b)=>b.date.localeCompare(a.date));
+  setCat('F');updateFilter();renderClients();renderHeaderBadge();
+}
+
+function waitForFb(cb){
+  if(window._fbReady)cb();
+  else window.addEventListener('fbready',cb,{once:true});
+}
+
+waitForFb(function(){
+  window._fbOnAuth(function(user){
+    var loading=document.getElementById('fb-loading');
+    if(loading)loading.style.display='none';
+    if(user){
+      document.getElementById('pw-screen').style.display='none';
+      initApp();
+      startFirestoreListeners();
+    } else {
+      document.getElementById('pw-screen').style.display='flex';
+      setTimeout(function(){document.getElementById('pw-input').focus();},100);
+    }
+  });
+});
 </script>
 </body>
 </html>
