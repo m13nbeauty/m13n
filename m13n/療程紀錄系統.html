@@ -708,7 +708,9 @@ function confirmEditClient(){
     if(document.getElementById('client-detail-view').style.display!=='none'){var tab=document.querySelector('.cd-tab.on');renderClientDetail(tab&&tab.textContent.includes('皮膚')?'skin':'body');}
   }
 }
+var _askDelClientBusy=false;
 function askDeleteClient(id){
+  if(_askDelClientBusy)return;_askDelClientBusy=true;setTimeout(()=>{_askDelClientBusy=false;},600);
   deleteClientId=id;var c=clients.find(x=>x.id===id);
   var cnt=records.filter(r=>r.clientId===id).length;
   document.getElementById('confirm-client-msg').textContent='刪除「'+c.name+'」及其 '+cnt+' 筆療程紀錄，操作無法復原。';
@@ -1071,7 +1073,11 @@ function commitEdit(){
 }
 
 // DELETE
-function askDelete(id){deleteRecId=id;document.getElementById('confirm-dialog').classList.add('show');}
+var _askDeleteBusy=false;
+function askDelete(id){
+  if(_askDeleteBusy)return;_askDeleteBusy=true;setTimeout(()=>{_askDeleteBusy=false;},600);
+  deleteRecId=id;document.getElementById('confirm-dialog').classList.add('show');
+}
 function closeConfirm(){document.getElementById('confirm-dialog').classList.remove('show');}
 function doDelete(){
   window._fbDel&&window._fbDel('records',deleteRecId);
