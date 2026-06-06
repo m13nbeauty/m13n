@@ -211,28 +211,28 @@ textarea.fi{resize:vertical;min-height:60px;line-height:1.6}
 .toast{position:fixed;bottom:24px;left:50%;transform:translateX(-50%) translateY(10px);background:var(--rose);color:#fff;padding:10px 22px;border-radius:30px;font-size:13px;font-weight:500;opacity:0;pointer-events:none;transition:all .3s;z-index:4000;white-space:nowrap;box-shadow:0 4px 20px rgba(139,79,110,.35)}
 .toast.on{opacity:1;transform:translateX(-50%) translateY(0)}
 
-/* CLIENT NOTES */
-.client-notes-banner{background:#fff8e8;border:1px solid #f0d080;border-radius:var(--r-sm);padding:10px 13px;margin-bottom:12px;display:none}
-.client-notes-banner.show{display:block}
-.client-notes-banner-title{font-size:11px;font-weight:500;color:#8a6a10;letter-spacing:.04em;margin-bottom:4px;display:flex;align-items:center;gap:5px}
-.client-notes-banner-body{font-size:12px;color:#5a4a10;line-height:1.6;white-space:pre-wrap}
+/* CLIENT NOTES BANNER */
+.notes-banner{background:#fffbea;border:1px solid #f0d060;border-radius:var(--r-sm);padding:10px 13px;margin-bottom:12px;display:none}
+.notes-banner.show{display:block}
+.notes-banner-title{font-size:11px;font-weight:500;color:#7a5a00;letter-spacing:.04em;margin-bottom:4px}
+.notes-banner-body{font-size:13px;color:#4a3a00;line-height:1.6;white-space:pre-wrap}
 /* STAFF CHIPS */
-.staff-chip-row{display:flex;flex-wrap:wrap;gap:6px;margin-bottom:8px}
+.staff-chip-row{display:flex;flex-wrap:wrap;gap:6px;margin-bottom:4px}
 .staff-chip{font-size:12px;padding:7px 14px;border:1.5px solid var(--border);border-radius:20px;cursor:pointer;background:#fff;color:var(--ink-mid);transition:all .15s;-webkit-tap-highlight-color:transparent;font-family:var(--sans)}
 .staff-chip.on{background:var(--rose);border-color:var(--rose);color:#fff;font-weight:500}
+/* EXPORT */
+.export-row{display:flex;gap:8px;margin-bottom:14px;flex-wrap:wrap}
+.export-btn{display:flex;align-items:center;gap:5px;padding:8px 14px;border:1px solid var(--border);border-radius:var(--r-sm);background:#fff;font-size:12px;cursor:pointer;font-family:var(--sans);color:var(--ink-soft);transition:all .15s;white-space:nowrap}
+.export-btn:hover{border-color:var(--rose-mid);color:var(--rose)}
 /* PRINT */
 @media print{
-  .app-header,.nav-tabs,.save-btn,.add-btn,.ri-actions,.cd-tabs,.back-btn,.settings-btn,.cc-actions,.draw-mini-btn,.modal-bg,.pw-screen,.toast,.img-viewer,.confirm-dialog{display:none!important}
-  .scroll-content{overflow:visible!important;padding:0}
-  .app-shell{height:auto!important}
+  .app-header,.nav-tabs,.save-btn,.add-btn,.ri-actions,.cd-tabs,.back-btn,.settings-btn,.cc-actions,.draw-mini-btn,.modal-bg,.pw-screen,.toast,.img-viewer,.confirm-dialog,.export-row{display:none!important}
+  .scroll-content{overflow:visible!important;padding:0}.app-shell{height:auto!important}
   .sec{display:block!important}
   body{font-size:12px}
   .ri{break-inside:avoid;box-shadow:none;border:1px solid #ccc}
   .exp{display:block!important}
 }
-/* EXPORT BTN */
-.export-btn{display:flex;align-items:center;gap:6px;padding:9px 14px;border:1px solid var(--border);border-radius:var(--r-sm);background:#fff;font-size:12px;cursor:pointer;font-family:var(--sans);color:var(--ink-soft);transition:all .15s;white-space:nowrap}
-.export-btn:hover{border-color:var(--rose-mid);color:var(--rose)}
 @media(min-width:481px){.app-shell{box-shadow:0 0 60px rgba(0,0,0,.1)}.modal{border-radius:16px;margin:auto;max-height:88vh}.modal-bg{align-items:center;padding:16px}}
 /* PASSWORD SCREEN */
 .pw-screen{position:fixed;inset:0;background:linear-gradient(145deg,#faf4f7 0%,#f0e6ec 50%,#fdfaf8 100%);z-index:9999;display:flex;align-items:center;justify-content:center;padding:24px}
@@ -270,12 +270,10 @@ textarea.fi{resize:vertical;min-height:60px;line-height:1.6}
 import { initializeApp } from 'https://www.gstatic.com/firebasejs/10.12.0/firebase-app.js';
 import { getAuth, signInWithEmailAndPassword, signOut, onAuthStateChanged, updatePassword } from 'https://www.gstatic.com/firebasejs/10.12.0/firebase-auth.js';
 import { getFirestore, collection, doc, setDoc, deleteDoc, onSnapshot } from 'https://www.gstatic.com/firebasejs/10.12.0/firebase-firestore.js';
-import { getStorage, ref, uploadString, getDownloadURL, deleteObject } from 'https://www.gstatic.com/firebasejs/10.12.0/firebase-storage.js';
 const firebaseConfig={apiKey:"AIzaSyCn7LKTm9Sxw9Apvaxvw5Y0JLSlZ4vaV6g",authDomain:"mn13-c1101.firebaseapp.com",projectId:"mn13-c1101",storageBucket:"mn13-c1101.firebasestorage.app",messagingSenderId:"106826366795",appId:"1:106826366795:web:1013d6fc1fcf065f8432ce"};
 const app=initializeApp(firebaseConfig);
 const auth=getAuth(app);
 const db=getFirestore(app);
-const storage=getStorage(app);
 const FB_EMAIL='m13nbeauty@gmail.com';
 window._fbAuth=auth;
 window._fbDb=db;
@@ -286,12 +284,6 @@ window._fbSet=(col,id,data)=>setDoc(doc(db,col,String(id)),data);
 window._fbDel=(col,id)=>deleteDoc(doc(db,col,String(id)));
 window._fbSnapshot=(col,cb)=>onSnapshot(collection(db,col),cb);
 window._fbUpdatePW=(user,pw)=>updatePassword(user,pw);
-window._fbUploadDraw=async(path,dataUrl)=>{
-  const r=ref(storage,path);
-  await uploadString(r,dataUrl,'data_url');
-  return getDownloadURL(r);
-};
-window._fbDeleteDraw=(path)=>deleteObject(ref(storage,path)).catch(()=>{});
 window._fbReady=true;
 window.dispatchEvent(new Event('fbready'));
 </script>
@@ -330,10 +322,7 @@ window.dispatchEvent(new Event('fbready'));
 
 <!-- ══ 新增紀錄 ══ -->
 <div class="sec" id="sec-record">
-  <div class="client-notes-banner" id="rec-client-notes-banner">
-    <div class="client-notes-banner-title">⚠️ 注意事項</div>
-    <div class="client-notes-banner-body" id="rec-client-notes-body"></div>
-  </div>
+  <div class="notes-banner" id="rec-notes-banner"><div class="notes-banner-title">⚠️ 客戶注意事項</div><div class="notes-banner-body" id="rec-notes-body"></div></div>
   <div class="stitle">類別</div>
   <div class="cat-row">
     <button class="cat-btn on" id="cat-f"  onclick="setCat('F')">F 臉部</button>
@@ -536,7 +525,7 @@ window.dispatchEvent(new Event('fbready'));
       <button class="type-toggle gomaji" id="tt-gomaji" onclick="togClientType('gomaji')">🎟 Gomaji</button>
     </div>
     <label class="fl">過敏史 / 長期注意事項</label>
-    <textarea class="fi" id="nc-notes" placeholder="例：對A酸敏感、有蟹足腫體質、懷孕中…" style="min-height:60px"></textarea>
+    <textarea class="fi" id="nc-notes" placeholder="例：對A酸敏感、有蟹足腫體質、目前懷孕…" style="min-height:58px"></textarea>
     <div class="modal-btn-row">
       <button class="modal-btn" onclick="closeModal('add-client-modal')">取消</button>
       <button class="modal-btn primary" onclick="confirmAddClient()">新增</button>
@@ -592,7 +581,7 @@ window.dispatchEvent(new Event('fbready'));
     <div style="font-size:13px;font-weight:500;color:var(--ink);margin-bottom:10px;font-family:var(--serif);padding-bottom:8px;border-bottom:1px solid var(--border)">👥 服務人員管理</div>
     <div id="staff-manage-list" style="margin-bottom:10px"></div>
     <div style="display:flex;gap:8px;margin-bottom:16px">
-      <input class="fi" type="text" id="new-staff-name" placeholder="新增服務人員姓名" style="margin:0;flex:1">
+      <input class="fi" type="text" id="new-staff-input" placeholder="輸入新服務人員姓名" style="margin:0;flex:1">
       <button class="modal-btn primary" style="flex:0;padding:8px 14px;white-space:nowrap" onclick="addStaff()">新增</button>
     </div>
     <div style="height:1px;background:var(--border);margin-bottom:16px"></div>
@@ -630,7 +619,7 @@ window.dispatchEvent(new Event('fbready'));
       <button class="type-toggle gomaji" id="ec-tt-gomaji" onclick="togEditClientType('gomaji')">🎟 Gomaji</button>
     </div>
     <label class="fl">過敏史 / 長期注意事項</label>
-    <textarea class="fi" id="ec-notes" placeholder="例：對A酸敏感、有蟹足腫體質、懷孕中…" style="min-height:60px"></textarea>
+    <textarea class="fi" id="ec-notes" placeholder="例：對A酸敏感、有蟹足腫體質、目前懷孕…" style="min-height:58px"></textarea>
     <div class="modal-btn-row">
       <button class="modal-btn" onclick="closeModal('edit-client-modal')">取消</button>
       <button class="modal-btn primary" onclick="confirmEditClient()">儲存</button>
@@ -706,6 +695,10 @@ function togPWEye(){
   i.type=i.type==='password'?'text':'password';
   document.getElementById('pw-eye').textContent=i.type==='password'?'👁':'🙈';
 }
+function openSettings(){
+  renderStaffManage();
+  document.getElementById('settings-modal').classList.add('show');document.body.style.overflow='hidden';
+}
 function changePW(){
   var nw=document.getElementById('s-new-pw').value;
   var cf=document.getElementById('s-confirm-pw').value;
@@ -727,7 +720,7 @@ function openEditClient(id){
   editClientId=id;var c=clients.find(x=>x.id===id);if(!c)return;
   document.getElementById('ec-name').value=c.name;
   document.getElementById('ec-birthday').value=c.birthday||'';
-  document.getElementById('ec-notes').value=c.clientNotes||'';
+  if(document.getElementById('ec-notes'))document.getElementById('ec-notes').value=c.clientNotes||'';
   editClientTypes={member:!!c.isMember,gomaji:!!c.isGomaji};
   document.getElementById('ec-tt-member').classList.toggle('on',editClientTypes.member);
   document.getElementById('ec-tt-gomaji').classList.toggle('on',editClientTypes.gomaji);
@@ -742,7 +735,7 @@ function confirmEditClient(){
   if(!name){showToast('請填寫姓名！');return;}
   var c=clients.find(x=>x.id===editClientId);if(!c)return;
   c.name=name;c.birthday=document.getElementById('ec-birthday').value;
-  c.clientNotes=document.getElementById('ec-notes').value.trim();
+  c.clientNotes=document.getElementById('ec-notes')?document.getElementById('ec-notes').value.trim():'';
   c.isMember=editClientTypes.member;c.isGomaji=editClientTypes.gomaji;
   window._fbSet&&window._fbSet('clients',c.id,c);
   closeModal('edit-client-modal');renderClients();updateFilter();showToast('客戶資料已更新 ✓');
@@ -814,52 +807,52 @@ function togOtherSec(s,btn){
   otherSections[s]=!otherSections[s];btn.classList.toggle('on',otherSections[s]);
   document.getElementById('sec-'+s).style.display=otherSections[s]?'block':'none';
 }
+function staffChg(){} // kept for compat
+
 // ── STAFF MANAGEMENT ─────────────────────────────────────────
 var staffList = ['小如如'];
-var curStaff = staffList[0];
+var curStaff = '小如如';
 
 function renderStaffChips(){
   var row = document.getElementById('staff-chips');
   if(!row) return;
+  var custom = curStaff && !staffList.includes(curStaff);
   row.innerHTML = staffList.map(s =>
-    `<button class="staff-chip${curStaff===s?' on':''}" onclick="pickStaff('${s}')">${s}</button>`
-  ).join('') + `<button class="staff-chip" onclick="pickStaff('__custom__')" id="staff-custom-chip">${curStaff&&!staffList.includes(curStaff)?'✓ '+curStaff:'其他…'}</button>`;
+    `<button class="staff-chip${curStaff===s?' on':''}" onclick="pickStaff('${s.replace(/'/g,"\\'")}',this)">${s}</button>`
+  ).join('') +
+  `<button class="staff-chip${custom?' on':''}" onclick="promptCustomStaff()">${custom?'✓ '+curStaff:'其他…'}</button>`;
 }
-function pickStaff(s){
-  if(s==='__custom__'){
-    var v=prompt('請輸入服務人員姓名：');
-    if(v){curStaff=v.trim();renderStaffChips();}
-    return;
-  }
-  curStaff=s; renderStaffChips();
+function pickStaff(s){curStaff=s;renderStaffChips();}
+function promptCustomStaff(){
+  var v=prompt('請輸入服務人員姓名：');
+  if(v&&v.trim()){curStaff=v.trim();renderStaffChips();}
 }
-function staffChg(){} // kept for compat
-
 function addStaff(){
-  var n=document.getElementById('new-staff-name').value.trim();
+  var inp=document.getElementById('new-staff-input');
+  var n=(inp.value||'').trim();
   if(!n){showToast('請輸入姓名');return;}
-  if(staffList.includes(n)){showToast('已存在');return;}
-  staffList.push(n);
-  document.getElementById('new-staff-name').value='';
-  window._fbSet&&window._fbSet('settings','staffList',{list:staffList});
-  renderStaffManage(); renderStaffChips(); showToast('已新增：'+n);
+  if(staffList.includes(n)){showToast(n+' 已存在');return;}
+  staffList.push(n);inp.value='';
+  saveStaffList();renderStaffManage();renderStaffChips();showToast('已新增：'+n);
 }
 function removeStaff(n){
+  if(!confirm('確定刪除「'+n+'」？')){return;}
   staffList=staffList.filter(s=>s!==n);
+  if(curStaff===n){curStaff=staffList[0]||'';}
+  saveStaffList();renderStaffManage();renderStaffChips();showToast('已刪除：'+n);
+}
+function saveStaffList(){
   window._fbSet&&window._fbSet('settings','staffList',{list:staffList});
-  renderStaffManage(); renderStaffChips();
-  if(curStaff===n){curStaff=staffList[0]||'';renderStaffChips();}
-  showToast('已刪除：'+n);
 }
 function renderStaffManage(){
-  var el=document.getElementById('staff-manage-list');
-  if(!el)return;
+  var el=document.getElementById('staff-manage-list');if(!el)return;
+  if(!staffList.length){el.innerHTML='<div style="font-size:12px;color:var(--ink-soft);padding:8px 0">尚無服務人員</div>';return;}
   el.innerHTML=staffList.map(s=>
-    `<div style="display:flex;justify-content:space-between;align-items:center;padding:7px 10px;background:var(--bg);border-radius:var(--r-sm);border:1px solid var(--border);margin-bottom:6px">
+    `<div style="display:flex;justify-content:space-between;align-items:center;padding:8px 11px;background:var(--bg);border-radius:var(--r-sm);border:1px solid var(--border);margin-bottom:6px">
       <span style="font-size:13px">${s}</span>
-      <button style="padding:3px 10px;border:1px solid #fcc;border-radius:12px;background:#fee;color:#c04070;font-size:11px;cursor:pointer;font-family:var(--sans)" onclick="removeStaff('${s}')">刪除</button>
+      <button style="padding:3px 10px;border:1px solid #fcc;border-radius:12px;background:#fee;color:#c04070;font-size:11px;cursor:pointer;font-family:var(--sans)" onclick="removeStaff('${s.replace(/'/g,"\\'")}')">刪除</button>
     </div>`
-  ).join('') || '<div style="font-size:12px;color:var(--ink-soft);padding:8px 0">尚無服務人員</div>';
+  ).join('');
 }
 function tog(el){el.classList.toggle('on');}
 function pairTog(btn){
@@ -910,12 +903,28 @@ DC.addEventListener('touchmove',e=>{e.preventDefault();if(!isDrawing)return;var 
 DC.addEventListener('touchend',()=>isDrawing=false);
 function doStroke(p){var ctx=DC.getContext('2d');ctx.strokeStyle=drawColor;ctx.lineWidth=drawSize;ctx.lineCap='round';ctx.lineJoin='round';ctx.beginPath();ctx.moveTo(lastX,lastY);ctx.lineTo(p.x,p.y);ctx.stroke();lastX=p.x;lastY=p.y;}
 function clearDraw(){DC.getContext('2d').clearRect(0,0,DC.width,DC.height);delete drawData[curModalKey];}
+function compressCanvas(canvas, maxKB){
+  // Try reducing quality until under maxKB
+  var q = 0.7;
+  var result = canvas.toDataURL('image/jpeg', q);
+  while(result.length > maxKB * 1024 * 1.37 && q > 0.2){ // base64 is ~1.37x raw
+    q -= 0.1;
+    result = canvas.toDataURL('image/jpeg', q);
+  }
+  return result;
+}
 function saveDraw(){
-  var comp=document.createElement('canvas');comp.width=DC.width;comp.height=DC.height;
-  var ctx=comp.getContext('2d'),base=new Image();
-  base.onload=function(){
-    ctx.drawImage(base,0,0);ctx.drawImage(DC,0,0);
-    drawData[curModalKey]=comp.toDataURL();
+  // Scale down canvas if too large, then composite base + drawing
+  var maxW = 600;
+  var scaleW = DC.width > maxW ? maxW / DC.width : 1;
+  var comp = document.createElement('canvas');
+  comp.width  = Math.round(DC.width  * scaleW);
+  comp.height = Math.round(DC.height * scaleW);
+  var ctx = comp.getContext('2d'), base = new Image();
+  base.onload = function(){
+    ctx.drawImage(base, 0, 0, comp.width, comp.height);
+    ctx.drawImage(DC,   0, 0, comp.width, comp.height);
+    drawData[curModalKey] = compressCanvas(comp, 80); // ~80KB per image
     updateInlineCanvas(curModalKey);
   };
   base.src=IMG_SRCS[curModalKey];
@@ -994,13 +1003,13 @@ function confirmAddClient(){
   var name=document.getElementById('nc-name').value.trim();
   if(!name){showToast('請填寫姓名！');return;}
   var bd=document.getElementById('nc-birthday').value;
-  var cn=document.getElementById('nc-notes').value.trim();
+  var cn=document.getElementById('nc-notes')?document.getElementById('nc-notes').value.trim():'';
   var newC={id:nCid++,name,birthday:bd,color:nCid%5,isMember:newClientTypes.member,isGomaji:newClientTypes.gomaji,clientNotes:cn};
   clients.push(newC);
   window._fbSet&&window._fbSet('clients',newC.id,newC);
   newClientTypes={member:false,gomaji:false};
   document.getElementById('nc-name').value='';document.getElementById('nc-birthday').value='';
-  document.getElementById('nc-notes').value='';
+  if(document.getElementById('nc-notes'))document.getElementById('nc-notes').value='';
   document.getElementById('tt-member').classList.remove('on');document.getElementById('tt-gomaji').classList.remove('on');
   closeModal('add-client-modal');updateFilter();renderClients();showToast('已新增客戶');
 }
@@ -1022,7 +1031,10 @@ function renderClientDetail(tab){
   var bodyRecs=recs.filter(r=>r.cat==='B'||r.cat==='FB'||(r.cat==='O'&&r.bodyIssues&&r.bodyIssues.length));
   var dv=document.getElementById('client-detail-view');
   dv.innerHTML=`
-    <button class="back-btn" onclick="backToClientList()">← 返回客戶列表</button>
+    <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:10px">
+      <button class="back-btn" style="margin:0" onclick="backToClientList()">← 返回</button>
+      <button class="export-btn" onclick="exportClientDetail()">📄 匯出 / 列印</button>
+    </div>
     <div class="cd-header">
       <div class="cd-av" style="background:${CBGS[c.color%5]};color:${CCLRS[c.color%5]}">${c.name.slice(0,2)}</div>
       <div style="flex:1">
@@ -1030,12 +1042,9 @@ function renderClientDetail(tab){
         <div class="cd-info">${c.birthday||'生日未填寫'}</div>
         <div class="cd-tag-row">${clientTagsHTML(c)}</div>
       </div>
-      <div style="display:flex;gap:6px;flex-direction:column;align-items:flex-end">
-        <button style="padding:6px 14px;border:1px solid var(--rose-mid);border-radius:20px;background:var(--rose-light);color:var(--rose);font-size:12px;cursor:pointer;font-family:var(--sans);white-space:nowrap" onclick="selClientAndRecord(${c.id})">＋ 新增紀錄</button>
-        <button class="export-btn" onclick="exportClient(${c.id})">📄 匯出紀錄</button>
-      </div>
+      <button style="padding:6px 14px;border:1px solid var(--rose-mid);border-radius:20px;background:var(--rose-light);color:var(--rose);font-size:12px;cursor:pointer;font-family:var(--sans);white-space:nowrap" onclick="selClientAndRecord(${c.id})">＋ 新增紀錄</button>
     </div>
-    ${c.clientNotes?`<div class="client-notes-banner show"><div class="client-notes-banner-title">⚠️ 注意事項</div><div class="client-notes-banner-body">${c.clientNotes}</div></div>`:''}
+    ${c.clientNotes?`<div class="notes-banner show"><div class="notes-banner-title">⚠️ 注意事項</div><div class="notes-banner-body">${c.clientNotes}</div></div>`:''}
     <div class="cd-tabs">
       <button class="cd-tab ${tab==='skin'?'on':''}" onclick="renderClientDetail('skin')">皮膚狀況紀錄</button>
       <button class="cd-tab ${tab==='body'?'on':''}" onclick="renderClientDetail('body')">身體狀況紀錄</button>
@@ -1113,27 +1122,16 @@ function getChecked(parentId){
 function saveRecord(){
   if(!selClient){showToast('請先選擇客戶！');switchTab('clients');return;}
   var staff=curStaff||'未填';
-  // Upload draws to Firebase Storage, store URLs
-  async function uploadDrawsAndSave(rec){
-    var uploads=Object.keys(drawData).filter(k=>drawData[k]);
-    for(var k of uploads){
-      try{
-        var path='draws/'+rec.clientId+'/'+rec.id+'/'+k+'.png';
-        var url=await window._fbUploadDraw(path,drawData[k]);
-        rec.draws[k]=url;
-      }catch(e){rec.draws[k]=drawData[k];} // fallback to dataURL
+  var currentDraws={};
+  ['face-before','face-during','body-front','body-back'].forEach(k=>{
+    if(drawData[k]){
+      // Re-compress at save time to guarantee small size
+      var img=new Image();
+      img.onload=function(){};
+      // drawData already compressed in saveDraw; just use it
+      currentDraws[k]=drawData[k];
     }
-    window._fbSet&&window._fbSet('records',rec.id,rec);
-    drawData={};
-    ['face-before','face-during','body-front','body-back'].forEach(k=>{
-      var cv=document.getElementById(CV_MAP[k]);
-      if(cv){cv.getContext('2d').clearRect(0,0,cv.width,cv.height);}
-      var hint=document.getElementById('hint-'+k);
-      if(hint){hint.parentElement.classList.remove('has-drawing');}
-    });
-    showToast('療程紀錄已儲存 ✓');
-    setTimeout(()=>{switchTab('history');renderHistory();},700);
-  }
+  });
   var rec={id:nRid++,clientId:selClient.id,
     date:document.getElementById('f-date').value||new Date().toISOString().split('T')[0],
     cat:curCat,service:document.getElementById('f-service').value||'（未填）',staff,
@@ -1146,9 +1144,17 @@ function saveRecord(){
   if(hasSkin){rec.baumannCode=['do','sr','pn','wt'].map(k=>baumannMap[k]).filter(Boolean).join('');rec.skinIssues=getChecked('sec-skin');rec.skinDesc=document.getElementById('f-skin-desc').value;rec.skinProducts=document.getElementById('f-skin-products').value;}
   if(hasBody){rec.bodyIssues=getChecked('sec-body');rec.bodyDesc=document.getElementById('f-body-desc').value;rec.bodyProducts=document.getElementById('f-body-products').value;}
   if(curCat==='O')rec.otherDesc=document.getElementById('f-other').value;
-  rec.draws={};
   records.unshift(rec);records.sort((a,b)=>b.date.localeCompare(a.date));
-  uploadDrawsAndSave(rec);
+  window._fbSet&&window._fbSet('records',rec.id,rec);
+  drawData={};
+  ['face-before','face-during','body-front','body-back'].forEach(k=>{
+    var cv=document.getElementById(CV_MAP[k]);
+    if(cv){cv.getContext('2d').clearRect(0,0,cv.width,cv.height);}
+    var hint=document.getElementById('hint-'+k);
+    if(hint){hint.parentElement.classList.remove('has-drawing');}
+  });
+  showToast('療程紀錄已儲存 ✓');
+  setTimeout(()=>{switchTab('history');renderHistory();},700);
 }
 
 // EDIT
@@ -1214,59 +1220,62 @@ function renderHeaderBadge(){
   var el=document.getElementById('client-header-badge');
   if(selClient){var c=selClient;el.innerHTML=`<div class="client-badge" onclick="switchTab('clients')"><div class="av" style="background:${CBGS[c.color%5]};color:${CCLRS[c.color%5]}">${c.name.slice(0,2)}</div><span>${c.name}</span></div>`;}
   else{el.innerHTML=`<button class="no-client-btn" onclick="switchTab('clients')">選擇客戶</button>`;}
-  // Show notes banner in record form
-  var banner=document.getElementById('rec-client-notes-banner');
-  var body=document.getElementById('rec-client-notes-body');
+  var banner=document.getElementById('rec-notes-banner');
+  var body=document.getElementById('rec-notes-body');
   if(banner&&body){
     if(selClient&&selClient.clientNotes){body.textContent=selClient.clientNotes;banner.classList.add('show');}
     else{banner.classList.remove('show');}
   }
 }
-function exportClient(id){
-  var c=clients.find(x=>x.id===id);if(!c)return;
-  var recs=records.filter(r=>r.clientId===id).sort((a,b)=>b.date.localeCompare(a.date));
-  var win=window.open('','_blank');
-  var MENOLAB2={before:'生理期前',during:'生理期中',after:'生理期後',none:'無','':'—'};
+function exportClientDetail(){
+  if(!selClient){showToast('請先選擇客戶');return;}
+  var c=selClient;
+  var recs=records.filter(r=>r.clientId===c.id).sort((a,b)=>b.date.localeCompare(a.date));
+  var ML={before:'生理期前',during:'生理期中',after:'生理期後',none:'無','':'—'};
+  var DL={'face-before':'操作前','face-during':'操作中','body-front':'身體正面','body-back':'身體背面'};
   var rows=recs.map(r=>{
-    var issues=[...(r.skinIssues||[]),...(r.bodyIssues||[])].join('、');
     var cat={F:'臉部',B:'身體',FB:'F+B',O:'其他'}[r.cat]||r.cat;
-    return `<div style="border:1px solid #e0d0d8;border-radius:10px;padding:14px;margin-bottom:12px;break-inside:avoid">
-      <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:8px">
-        <b style="color:#8b4f6e">${r.date}&nbsp;&nbsp;${cat}&nbsp;&nbsp;${r.service}</b>
+    var issues=[...(r.skinIssues||[]),...(r.bodyIssues||[])].join('、');
+    var drawImgs=r.draws&&Object.keys(r.draws).length
+      ?'<div style="margin-top:8px">'+Object.entries(r.draws).map(([k,v])=>`<span style="display:inline-block;text-align:center;margin-right:10px"><img src="${v}" style="width:110px;border-radius:6px;border:1px solid #e0d0d8;display:block"><span style="font-size:10px;color:#9c8b82">${DL[k]||k}</span></span>`).join('')+'</div>':'';
+    return`<div style="border:1px solid #e8ddd8;border-radius:10px;padding:14px 16px;margin-bottom:12px;break-inside:avoid">
+      <div style="display:flex;justify-content:space-between;margin-bottom:8px">
+        <b style="color:#8b4f6e;font-size:14px">${r.date}&ensp;${cat}&ensp;${r.service}</b>
         <span style="font-size:12px;color:#9c8b82">${r.staff}${r.charge?' · NT$'+Number(r.charge).toLocaleString():''}</span>
       </div>
-      ${r.baumannCode?`<div style="font-size:12px;margin-bottom:4px">膚質：${r.baumannCode}</div>`:''}
-      ${issues?`<div style="font-size:12px;margin-bottom:4px">問題：${issues}</div>`:''}
-      ${r.meno&&r.meno!=='none'?`<div style="font-size:12px;margin-bottom:4px">生理期：${MENOLAB2[r.meno]}${r.menoDt?' （上次：'+r.menoDt+'）':''}</div>`:''}
-      ${r.skinDesc?`<div style="font-size:12px;margin-bottom:4px"><b>皮膚描述：</b>${r.skinDesc}</div>`:''}
-      ${r.bodyDesc?`<div style="font-size:12px;margin-bottom:4px"><b>身體描述：</b>${r.bodyDesc}</div>`:''}
-      ${r.skinProducts?`<div style="font-size:12px;margin-bottom:4px"><b>保養品：</b>${r.skinProducts}</div>`:''}
-      ${r.used?`<div style="font-size:12px;margin-bottom:4px"><b>療程手法：</b>${r.used}</div>`:''}
-      ${r.questions?`<div style="font-size:12px;margin-bottom:4px"><b>客人提問：</b>${r.questions}</div>`:''}
-      ${r.homecare?`<div style="font-size:12px;margin-bottom:4px"><b>居家護理：</b>${r.homecare}</div>`:''}
-      ${r.notes?`<div style="font-size:12px;margin-bottom:4px"><b>備註：</b>${r.notes}</div>`:''}
-      ${r.draws&&Object.keys(r.draws).length?'<div style="font-size:12px;margin-bottom:4px"><b>標示圖：</b>'
-        +Object.entries(r.draws).map(([k,v])=>{var lb={'face-before':'操作前','face-during':'操作中','body-front':'身體正面','body-back':'身體背面'}[k]||k;return`<img src="${v}" style="width:100px;margin:4px;border-radius:6px;border:1px solid #ddd" alt="${lb}">`;}).join('')+'</div>':''}
+      ${r.baumannCode?`<div style="font-size:12px;margin-bottom:3px">膚質 Baumann：<b>${r.baumannCode}</b></div>`:''}
+      ${issues?`<div style="font-size:12px;margin-bottom:3px">問題：${issues}</div>`:''}
+      ${r.meno&&r.meno!=='none'?`<div style="font-size:12px;margin-bottom:3px">生理期：${ML[r.meno]}${r.menoDt?' (上次 '+r.menoDt+')':''}</div>`:''}
+      ${r.skinDesc?`<div style="font-size:12px;margin-bottom:3px"><b>皮膚描述：</b>${r.skinDesc}</div>`:''}
+      ${r.bodyDesc?`<div style="font-size:12px;margin-bottom:3px"><b>身體描述：</b>${r.bodyDesc}</div>`:''}
+      ${r.skinProducts?`<div style="font-size:12px;margin-bottom:3px;white-space:pre-wrap"><b>保養品：</b>${r.skinProducts}</div>`:''}
+      ${r.used?`<div style="font-size:12px;margin-bottom:3px"><b>療程手法：</b>${r.used}</div>`:''}
+      ${r.questions?`<div style="font-size:12px;margin-bottom:3px"><b>客人提問：</b>${r.questions}</div>`:''}
+      ${r.homecare?`<div style="font-size:12px;margin-bottom:3px"><b>居家護理：</b>${r.homecare}</div>`:''}
+      ${r.notes?`<div style="font-size:12px;margin-bottom:3px"><b>備註：</b>${r.notes}</div>`:''}
+      ${drawImgs}
     </div>`;
   }).join('');
-  var tags=[c.isMember?'👑 會員':'',c.isGomaji?'🎟 Gomaji':''].filter(Boolean).join(' ');
-  win.document.write(`<!DOCTYPE html><html lang="zh-TW"><head><meta charset="UTF-8"><title>${c.name} 療程紀錄</title>
-  <style>body{font-family:'Noto Sans TC',sans-serif;max-width:700px;margin:0 auto;padding:20px;color:#2c2018}
-  h1{color:#8b4f6e;font-family:'Noto Serif TC',serif;font-weight:400;border-bottom:1px solid #e8ddd8;padding-bottom:10px}
-  .info{font-size:13px;color:#9c8b82;margin-bottom:20px}
-  @media print{button{display:none}}
+  var tags=[c.isMember?'👑 會員':'',c.isGomaji?'🎟 Gomaji':''].filter(Boolean).join('&emsp;');
+  var win=window.open('','_blank');
+  win.document.write(`<!DOCTYPE html><html lang="zh-TW"><head><meta charset="UTF-8">
+  <title>${c.name} 療程紀錄</title>
+  <link href="https://fonts.googleapis.com/css2?family=Noto+Serif+TC:wght@400;500&family=Noto+Sans+TC:wght@300;400;500&display=swap" rel="stylesheet">
+  <style>
+    body{font-family:'Noto Sans TC',sans-serif;max-width:720px;margin:0 auto;padding:24px 20px;color:#2c2018;font-size:14px}
+    h1{font-family:'Noto Serif TC',serif;font-weight:400;color:#8b4f6e;margin-bottom:6px;font-size:22px}
+    .info{font-size:13px;color:#9c8b82;margin-bottom:8px;line-height:1.8}
+    .warn{background:#fffbea;border:1px solid #f0d060;border-radius:8px;padding:8px 12px;font-size:13px;color:#4a3a00;margin-bottom:16px;white-space:pre-wrap}
+    .print-btn{padding:9px 20px;background:#8b4f6e;color:#fff;border:none;border-radius:8px;cursor:pointer;font-size:13px;margin-bottom:20px;font-family:'Noto Sans TC',sans-serif}
+    @media print{.print-btn{display:none}}
   </style></head><body>
-  <h1>${c.name} 療程紀錄</h1>
-  <div class="info">生日：${c.birthday||'未填'}&emsp;${tags}${c.clientNotes?'<br>⚠️ 注意事項：'+c.clientNotes:''}<br>共 ${recs.length} 筆紀錄&emsp;匯出時間：${new Date().toLocaleString('zh-TW')}</div>
-  <button onclick="window.print()" style="margin-bottom:16px;padding:8px 18px;background:#8b4f6e;color:#fff;border:none;border-radius:8px;cursor:pointer;font-size:13px">🖨 列印 / 儲存PDF</button>
-  ${rows||'<p style="color:#9c8b82">尚無紀錄</p>'}
+  <h1>${c.name} 的療程紀錄</h1>
+  <div class="info">生日：${c.birthday||'未填'}&emsp;${tags}<br>共 ${recs.length} 筆紀錄&emsp;匯出時間：${new Date().toLocaleString('zh-TW')}</div>
+  ${c.clientNotes?`<div class="warn">⚠️ 注意事項：${c.clientNotes}</div>`:''}
+  <button class="print-btn" onclick="window.print()">🖨 列印 / 儲存 PDF</button>
+  ${rows||'<p style="color:#9c8b82">尚無療程紀錄</p>'}
   </body></html>`);
   win.document.close();
-}
-
-function openSettings(){
-  renderStaffManage();
-  document.getElementById('settings-modal').classList.add('show');document.body.style.overflow='hidden';
 }
 
 function showToast(msg){var t=document.getElementById('toast');t.textContent=msg;t.classList.add('on');setTimeout(()=>t.classList.remove('on'),2400);}
@@ -1278,13 +1287,13 @@ document.getElementById('add-client-btn').addEventListener('click',function(){
 });
 
 function startFirestoreListeners(){
-  // Load staff list
-  window._fbSnapshot('settings',snap=>{
+  // Load staff list from Firestore settings
+  window._fbSnapshot&&window._fbSnapshot('settings',snap=>{
     snap.forEach(d=>{
-      if(d.id==='staffList'&&d.data().list){
+      if(d.id==='staffList'&&Array.isArray(d.data().list)){
         staffList=d.data().list;
-        renderStaffChips();
-        renderStaffManage();
+        if(!curStaff||!staffList.includes(curStaff))curStaff=staffList[0]||'';
+        renderStaffChips();renderStaffManage();
       }
     });
   });
